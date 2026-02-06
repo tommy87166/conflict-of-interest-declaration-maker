@@ -477,7 +477,7 @@
 
         // ========== Step 3: Download template ==========
         function downloadHireDateTemplate() {
-            const data = [['姓名', '到職日(年/月/日)']];
+            const data = [['姓名', '到職日(西元年/月/日)']];
             customOnlyList.forEach(name => data.push([name, '']));
 
             const ws = XLSX.utils.aoa_to_sheet(data);
