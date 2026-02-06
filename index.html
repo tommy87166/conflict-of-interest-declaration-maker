@@ -192,6 +192,10 @@
                 <span class="form-hint">如姓名與 Timesheet 重複，以 Timesheet 為主（重複者將顯示於排除清單）</span>
             </div>
 
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="processStep2()">處理名單</button>
+            </div>
+
             <div id="dupCustomAlert" class="alert alert-orange hidden">
                 <strong>以下自訂名單姓名重複輸入，已自動去重：</strong>
                 <span id="dupCustomNames"></span>
@@ -200,10 +204,6 @@
             <div id="excludedAlert" class="alert alert-red hidden">
                 <strong>以下自訂名單姓名與 Timesheet 重複，已排除（以 Timesheet 為主）：</strong>
                 <span id="excludedNames"></span>
-            </div>
-
-            <div class="btn-group">
-                <button class="btn btn-primary" onclick="processStep2()">處理名單</button>
             </div>
         </div>
 
