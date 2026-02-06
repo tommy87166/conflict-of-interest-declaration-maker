@@ -250,7 +250,7 @@
 
             <div id="hireDatePreview" class="hidden" style="margin-top: 12px;">
                 <div class="table-wrapper">
-                    <table id="hireDateTable"></table>
+                    <table id="hireDateTable" class="result-table"></table>
                 </div>
             </div>
 
@@ -599,7 +599,7 @@
             validationEl.classList.remove('hidden');
 
             // Preview table
-            let html = '<table class="result-table"><thead><tr><th>#</th><th>姓名</th><th>到職日</th><th>狀態</th></tr></thead><tbody>';
+            let html = '<thead><tr><th>#</th><th>姓名</th><th>到職日</th><th>狀態</th></tr></thead><tbody>';
             let i = 0;
             for (const name of customOnlyList) {
                 i++;
@@ -620,7 +620,7 @@
                 </tr>`;
             }
             html += '</tbody></table>';
-            document.getElementById('hireDateTable').outerHTML = `<table id="hireDateTable">${html}</table>`;
+            document.getElementById('hireDateTable').innerHTML = html;
             document.getElementById('hireDatePreview').classList.remove('hidden');
 
             // Disable generate button if has errors
