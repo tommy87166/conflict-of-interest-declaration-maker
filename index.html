@@ -246,6 +246,8 @@
                 <button class="btn-sm" onclick="resetStep4()">重新上傳</button>
             </div>
 
+            <div id="hireDateValidation" class="hidden" style="margin-top: 12px;"></div>
+
             <div id="hireDatePreview" class="hidden" style="margin-top: 12px;">
                 <div class="table-wrapper">
                     <table id="hireDateTable"></table>
@@ -253,7 +255,7 @@
             </div>
 
             <div class="btn-group">
-                <button class="btn btn-primary" onclick="generateResults()">產生比較結果</button>
+                <button class="btn btn-primary" id="btnGenerate" onclick="generateResults()">產生比較結果</button>
             </div>
         </div>
 
@@ -537,26 +539,90 @@
             }
 
             hireDateData = {};
+            const uploadedNames = new Set();
+            const missingDateNames = [];
             let count = 0;
+
             for (let r = 1; r < rows.length; r++) {
                 const row = rows[r];
                 const name = row[nameIdx] != null ? String(row[nameIdx]).trim() : '';
                 if (!name) continue;
+                uploadedNames.add(name);
                 const d = parseDate(row[dateIdx]);
-                if (d) { hireDateData[name] = d; count++; }
+                if (d) {
+                    hireDateData[name] = d; count++;
+                } else {
+                    missingDateNames.push(name);
+                }
             }
 
             document.getElementById('parsedCount4').textContent = `${count} 人`;
 
-            // Preview
-            let html = '<table class="result-table"><thead><tr><th>#</th><th>姓名</th><th>到職日</th></tr></thead><tbody>';
+            // Validate: compare with customOnlyList
+            const expectedSet = new Set(customOnlyList);
+            const missingNames = customOnlyList.filter(n => !uploadedNames.has(n));
+            const extraNames = [...uploadedNames].filter(n => !expectedSet.has(n));
+
+            let validationHtml = '';
+            let hasError = false;
+
+            if (missingNames.length > 0) {
+                hasError = true;
+                validationHtml += `<div class="alert alert-red">
+                    <strong>以下人員在步驟 3 清單中，但上傳的檔案中找不到：</strong>
+                    ${esc(missingNames.join('、'))}
+                </div>`;
+            }
+            if (missingDateNames.length > 0) {
+                hasError = true;
+                validationHtml += `<div class="alert alert-orange">
+                    <strong>以下人員尚未填寫到職日：</strong>
+                    ${esc(missingDateNames.join('、'))}
+                </div>`;
+            }
+            if (extraNames.length > 0) {
+                validationHtml += `<div class="alert alert-blue">
+                    <strong>以下人員不在步驟 3 清單中（將忽略）：</strong>
+                    ${esc(extraNames.join('、'))}
+                </div>`;
+            }
+            if (!hasError && missingNames.length === 0 && missingDateNames.length === 0) {
+                validationHtml = `<div class="alert alert-green">
+                    <strong>驗證通過：</strong>所有人員名單一致，且到職日皆已填寫。
+                </div>`;
+            }
+
+            const validationEl = document.getElementById('hireDateValidation');
+            validationEl.innerHTML = validationHtml;
+            validationEl.classList.remove('hidden');
+
+            // Preview table
+            let html = '<table class="result-table"><thead><tr><th>#</th><th>姓名</th><th>到職日</th><th>狀態</th></tr></thead><tbody>';
             let i = 0;
-            for (const [name, d] of Object.entries(hireDateData)) {
-                html += `<tr><td>${++i}</td><td>${esc(name)}</td><td>${fmtDate(d)}</td></tr>`;
+            for (const name of customOnlyList) {
+                i++;
+                const d = hireDateData[name];
+                const uploaded = uploadedNames.has(name);
+                let status;
+                if (!uploaded) {
+                    status = '<span style="color:#c53030;">缺少此人</span>';
+                } else if (!d) {
+                    status = '<span style="color:#c05621;">未填到職日</span>';
+                } else {
+                    status = '<span style="color:#276749;">OK</span>';
+                }
+                html += `<tr>
+                    <td>${i}</td><td>${esc(name)}</td>
+                    <td>${d ? fmtDate(d) : '-'}</td>
+                    <td>${status}</td>
+                </tr>`;
             }
             html += '</tbody></table>';
             document.getElementById('hireDateTable').outerHTML = `<table id="hireDateTable">${html}</table>`;
             document.getElementById('hireDatePreview').classList.remove('hidden');
+
+            // Disable generate button if has errors
+            document.getElementById('btnGenerate').disabled = hasError;
         }
 
         // ========== Step 5 & 6: Generate results ==========
