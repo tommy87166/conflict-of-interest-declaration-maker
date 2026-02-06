@@ -120,12 +120,11 @@
         .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
         .legend-color { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #ccc; }
 
-        /* Word table */
+        /* Word table — 5.33cm per col, 1.66cm row height */
         .word-table { margin-top: 16px; }
-        .word-table table { border: 2px solid #333; }
-        .word-table th { background: #f0f0f0; color: #333; border: 1.5px solid #333; text-align: center; padding: 10px 20px; font-size: 15px; }
-        .word-table td { border: 1.5px solid #333; text-align: center; padding: 10px 20px; font-size: 15px; }
-        .word-table .sign-cell { min-width: 120px; height: 50px; }
+        .word-table table { border: 2px solid #333; table-layout: fixed; width: 604px; /* 3 x ~201px ≈ 3 x 5.33cm */ }
+        .word-table th { background: #f0f0f0; color: #333; border: 1.5px solid #333; text-align: center; font-size: 15px; width: 201px; height: 63px; padding: 4px 8px; }
+        .word-table td { border: 1.5px solid #333; text-align: center; font-size: 15px; width: 201px; height: 63px; padding: 4px 8px; }
 
         .hidden { display: none; }
 
@@ -461,15 +460,17 @@
         function confirmAndGenerate() {
             if (!window._results || window._results.length === 0) return;
 
-            let html = `<thead><tr>
-                <th>聲明人姓名</th><th>簽章</th><th>日期</th>
+            // 5.33cm ≈ 201px (at 96dpi: 5.33*37.8), 1.66cm ≈ 63px
+            const CW = 201; const RH = 63;
+            let html = `<thead><tr height="${RH}">
+                <th width="${CW}" height="${RH}">聲明人姓名</th><th width="${CW}" height="${RH}">簽章</th><th width="${CW}" height="${RH}">日期</th>
             </tr></thead><tbody>`;
 
             window._results.forEach(r => {
-                html += `<tr>
-                    <td>${esc(r.name)}</td>
-                    <td class="sign-cell"></td>
-                    <td>${fmtDate(r.finalDate)}</td>
+                html += `<tr height="${RH}">
+                    <td width="${CW}" height="${RH}">${esc(r.name)}</td>
+                    <td width="${CW}" height="${RH}"></td>
+                    <td width="${CW}" height="${RH}">${fmtDate(r.finalDate)}</td>
                 </tr>`;
             });
             html += '</tbody>';
