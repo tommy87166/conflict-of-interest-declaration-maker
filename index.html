@@ -255,7 +255,7 @@
             </div>
 
             <div class="btn-group">
-                <button class="btn btn-primary" id="btnGenerate" onclick="generateResults()">產生比較結果</button>
+                <button class="btn btn-primary" id="btnGenerate" onclick="generateResults()" disabled>產生比較結果</button>
             </div>
         </div>
 
@@ -522,7 +522,7 @@
             document.getElementById('fileInfo4').classList.add('hidden');
             document.getElementById('hireDateValidation').classList.add('hidden');
             document.getElementById('hireDatePreview').classList.add('hidden');
-            document.getElementById('btnGenerate').disabled = false;
+            document.getElementById('btnGenerate').disabled = true;
             hideSteps(5);
         }
 
@@ -623,7 +623,7 @@
             document.getElementById('hireDateTable').innerHTML = html;
             document.getElementById('hireDatePreview').classList.remove('hidden');
 
-            // Disable generate button if has errors
+            // Enable generate button only when validation passes
             document.getElementById('btnGenerate').disabled = hasError;
         }
 
