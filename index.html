@@ -180,7 +180,12 @@
             <div class="form-group" style="margin-top: 8px;">
                 <label>自訂名單（不在 Timesheet 中的人員，日期直接壓 A&amp;C 完成日）</label>
                 <textarea id="customNamesInput" placeholder="用逗號分隔，例如：王小明, 李大華, 張美玲"></textarea>
-                <span class="form-hint">如姓名與 Timesheet 重複，以 Timesheet 為主</span>
+                <span class="form-hint">如姓名與 Timesheet 重複，以 Timesheet 為主（重複者將顯示於排除清單）</span>
+            </div>
+
+            <div id="excludedSection" class="hidden" style="margin-top: 12px; padding: 12px 16px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; font-size: 13px; color: #c53030;">
+                <strong>以下自訂名單姓名與 Timesheet 重複，已排除（以 Timesheet 為主）：</strong>
+                <span id="excludedNames"></span>
             </div>
 
             <div class="btn-group">
@@ -200,6 +205,7 @@
                 <div class="legend-item"><div class="legend-color" style="background:#fefcbf;"></div><span>相同日期</span></div>
                 <div class="legend-item"><div class="legend-color" style="background:#e9d8fd;"></div><span>自訂名單</span></div>
             </div>
+            <p style="font-size:13px; color:#718096; margin-bottom:10px;">規定生效日：<strong>2025/07/01</strong>　—　孰早日期若在生效日之前，最終簽署日期將改壓 2025/07/01</p>
 
             <div class="table-wrapper">
                 <table id="resultTable" class="result-table"></table>
@@ -332,6 +338,8 @@
         }
 
         // ========== Comparison ==========
+        const EFFECTIVE_DATE = new Date(2025, 6, 1); // 2025/07/01
+
         function runComparison() {
             const acDateStr = document.getElementById('acDateInput').value;
             if (!acDateStr) { alert('請選擇 A&C 完成日'); return; }
@@ -341,6 +349,7 @@
 
             const acDate = new Date(acDateStr + 'T00:00:00');
             const results = [];
+            const excludedNames = [];
 
             // 1. Timesheet people
             const tsNames = new Set();
@@ -349,16 +358,23 @@
                 const ts = firstDate.getTime();
                 const ac = acDate.getTime();
 
-                let comparison, compClass, finalDate;
+                let comparison, compClass, earlierDate;
                 if (ts < ac) {
-                    comparison = 'Timesheet 較早'; compClass = 'earlier-timesheet'; finalDate = firstDate;
+                    comparison = 'Timesheet 較早'; compClass = 'earlier-timesheet'; earlierDate = firstDate;
                 } else if (ts > ac) {
-                    comparison = 'A&C 較早'; compClass = 'earlier-ac'; finalDate = acDate;
+                    comparison = 'A&C 較早'; compClass = 'earlier-ac'; earlierDate = acDate;
                 } else {
-                    comparison = '相同日期'; compClass = 'same-date'; finalDate = acDate;
+                    comparison = '相同日期'; compClass = 'same-date'; earlierDate = acDate;
                 }
 
-                results.push({ name, source: 'Timesheet', firstDate, acDate, comparison, compClass, finalDate });
+                // Check against effective date
+                const beforeEffective = earlierDate < EFFECTIVE_DATE;
+                const finalDate = beforeEffective ? EFFECTIVE_DATE : earlierDate;
+
+                results.push({
+                    name, source: 'Timesheet', firstDate, acDate, comparison, compClass,
+                    earlierDate, beforeEffective, finalDate
+                });
             }
 
             // 2. Custom names
@@ -366,12 +382,28 @@
             if (customInput) {
                 const customNames = customInput.split(/[,，、\n]+/).map(s => s.trim()).filter(s => s);
                 for (const name of customNames) {
-                    if (tsNames.has(name)) continue; // Timesheet takes priority
+                    if (tsNames.has(name)) {
+                        excludedNames.push(name);
+                        continue;
+                    }
+                    const earlierDate = acDate;
+                    const beforeEffective = earlierDate < EFFECTIVE_DATE;
+                    const finalDate = beforeEffective ? EFFECTIVE_DATE : earlierDate;
                     results.push({
                         name, source: '自訂名單', firstDate: null, acDate,
-                        comparison: '自訂名單（壓 A&C 日期）', compClass: 'custom-row', finalDate: acDate
+                        comparison: '自訂名單（壓 A&C 日期）', compClass: 'custom-row',
+                        earlierDate, beforeEffective, finalDate
                     });
                 }
+            }
+
+            // Show excluded names
+            const excludedSection = document.getElementById('excludedSection');
+            if (excludedNames.length > 0) {
+                document.getElementById('excludedNames').textContent = excludedNames.join('、');
+                excludedSection.classList.remove('hidden');
+            } else {
+                excludedSection.classList.add('hidden');
             }
 
             displayResults(results);
@@ -383,6 +415,7 @@
             const acEarlier = results.filter(r => r.compClass === 'earlier-ac').length;
             const same = results.filter(r => r.compClass === 'same-date').length;
             const custom = results.filter(r => r.compClass === 'custom-row').length;
+            const adjusted = results.filter(r => r.beforeEffective).length;
 
             document.getElementById('summaryCards').innerHTML = `
                 <div class="summary-card blue"><div class="number">${total}</div><div class="label">總人數</div></div>
@@ -394,10 +427,14 @@
 
             let html = `<thead><tr>
                 <th>#</th><th>姓名</th><th>來源</th><th>Timesheet 第一天</th>
-                <th>A&amp;C 完成日</th><th>何者較早?</th><th>最終決定日期</th>
+                <th>A&amp;C 完成日</th><th>何者較早?</th><th>孰早日期</th>
+                <th>vs 規定生效日</th><th>最終決定簽署日期</th>
             </tr></thead><tbody>`;
 
             results.forEach((r, i) => {
+                const effectiveNote = r.beforeEffective
+                    ? '<span style="color:#c53030;">生效日前 → 改壓 07/01</span>'
+                    : '<span style="color:#276749;">生效日後（不調整）</span>';
                 html += `<tr class="${r.compClass}">
                     <td>${i + 1}</td>
                     <td>${esc(r.name)}</td>
@@ -405,6 +442,8 @@
                     <td>${r.firstDate ? fmtDate(r.firstDate) : '-'}</td>
                     <td>${fmtDate(r.acDate)}</td>
                     <td>${r.comparison}</td>
+                    <td>${fmtDate(r.earlierDate)}</td>
+                    <td>${effectiveNote}</td>
                     <td><strong>${fmtDate(r.finalDate)}</strong></td>
                 </tr>`;
             });
