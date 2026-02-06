@@ -187,6 +187,11 @@
                 <span id="excludedNames"></span>
             </div>
 
+            <div id="dupCustomSection" class="hidden" style="margin-top: 12px; padding: 12px 16px; background: #fffaf0; border: 1px solid #feebc8; border-radius: 8px; font-size: 13px; color: #c05621;">
+                <strong>以下自訂名單姓名重複輸入，已自動去重：</strong>
+                <span id="dupCustomNames"></span>
+            </div>
+
             <div class="btn-group">
                 <button class="btn btn-primary" onclick="runComparison()">開始比較</button>
             </div>
@@ -379,11 +384,18 @@
                 });
             }
 
-            // 2. Custom names
+            // 2. Custom names (deduplicate + check overlap with Timesheet)
+            const dupCustomNames = [];
             const customInput = document.getElementById('customNamesInput').value.trim();
             if (customInput) {
-                const customNames = customInput.split(/[,，、\n]+/).map(s => s.trim()).filter(s => s);
-                for (const name of customNames) {
+                const customNamesRaw = customInput.split(/[,，、\n]+/).map(s => s.trim()).filter(s => s);
+                const customSeen = new Set();
+                for (const name of customNamesRaw) {
+                    if (customSeen.has(name)) {
+                        if (!dupCustomNames.includes(name)) dupCustomNames.push(name);
+                        continue;
+                    }
+                    customSeen.add(name);
                     if (tsNames.has(name)) {
                         excludedNames.push(name);
                         continue;
@@ -399,13 +411,22 @@
                 }
             }
 
-            // Show excluded names
+            // Show excluded names (overlap with Timesheet)
             const excludedSection = document.getElementById('excludedSection');
             if (excludedNames.length > 0) {
                 document.getElementById('excludedNames').textContent = excludedNames.join('、');
                 excludedSection.classList.remove('hidden');
             } else {
                 excludedSection.classList.add('hidden');
+            }
+
+            // Show duplicate custom names
+            const dupCustomSection = document.getElementById('dupCustomSection');
+            if (dupCustomNames.length > 0) {
+                document.getElementById('dupCustomNames').textContent = dupCustomNames.join('、');
+                dupCustomSection.classList.remove('hidden');
+            } else {
+                dupCustomSection.classList.add('hidden');
             }
 
             displayResults(results);
