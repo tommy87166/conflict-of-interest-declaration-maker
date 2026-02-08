@@ -263,31 +263,34 @@
 
         <!-- ==================== Step 5 ==================== -->
         <div id="step5Section" class="section hidden">
-            <h2><span class="step-badge">步驟 5</span>來源 1：Timesheet 人員結果</h2>
+            <h2><span class="step-badge">步驟 5</span>比較結果確認</h2>
+
+            <div id="summary5" class="summary-cards"></div>
+
+            <!-- Source 1: Timesheet -->
+            <h3 style="font-size:15px; color:#2d3748; margin:16px 0 8px;">來源 1：Timesheet 人員</h3>
             <p style="font-size:13px; color:#718096; margin-bottom:10px;">
                 比較 Timesheet 第一天與規定生效日 <strong>2025/07/01</strong>，若在生效日前則改壓 2025/07/01
             </p>
-            <div id="summary5" class="summary-cards"></div>
             <div class="table-wrapper">
                 <table id="resultTable5" class="result-table"></table>
+            </div>
+
+            <!-- Source 2: Custom -->
+            <div id="source2Block" class="hidden">
+                <h3 style="font-size:15px; color:#2d3748; margin:24px 0 8px;">來源 2：自訂名單人員</h3>
+                <p style="font-size:13px; color:#718096; margin-bottom:10px;">
+                    取「到職日」、「A&amp;C 完成日」、「規定生效日 2025/07/01」三者中<strong>最晚</strong>的日期
+                </p>
+                <div class="table-wrapper">
+                    <table id="resultTable6" class="result-table"></table>
+                </div>
             </div>
         </div>
 
         <!-- ==================== Step 6 ==================== -->
         <div id="step6Section" class="section hidden">
-            <h2><span class="step-badge">步驟 6</span>來源 2：自訂名單人員結果</h2>
-            <p style="font-size:13px; color:#718096; margin-bottom:10px;">
-                取「到職日」、「A&amp;C 完成日」、「規定生效日 2025/07/01」三者中<strong>最晚</strong>的日期
-            </p>
-            <div id="summary6" class="summary-cards"></div>
-            <div class="table-wrapper">
-                <table id="resultTable6" class="result-table"></table>
-            </div>
-        </div>
-
-        <!-- ==================== Step 7 ==================== -->
-        <div id="step7Section" class="section hidden">
-            <h2><span class="step-badge">步驟 7</span>聲明表格（複製到 Word）</h2>
+            <h2><span class="step-badge">步驟 6</span>聲明表格（複製到 Word）</h2>
 
             <div class="btn-group" style="margin-bottom: 12px;">
                 <button class="btn btn-green" onclick="confirmAndGenerate()">確認，產生聲明表格</button>
@@ -695,8 +698,8 @@
             displaySource1();
             displaySource2();
 
-            // Show step 7
-            document.getElementById('step7Section').classList.remove('hidden');
+            // Show step 6
+            document.getElementById('step6Section').classList.remove('hidden');
             document.getElementById('finalTableWrapper').classList.add('hidden');
 
             document.getElementById('step5Section').scrollIntoView({ behavior: 'smooth' });
@@ -709,8 +712,11 @@
             const total = source1Results.length;
             const adjusted = source1Results.filter(r => r.beforeEffective).length;
 
+            const customCount = source2Results.length;
             document.getElementById('summary5').innerHTML = `
+                <div class="summary-card blue"><div class="number">${total + customCount}</div><div class="label">總人數</div></div>
                 <div class="summary-card blue"><div class="number">${total}</div><div class="label">Timesheet 人數</div></div>
+                <div class="summary-card" style="border:1px solid #e9d8fd;"><div class="number" style="color:#805ad5;">${customCount}</div><div class="label">自訂名單人數</div></div>
                 <div class="summary-card green"><div class="number">${total - adjusted}</div><div class="label">生效日後（不調整）</div></div>
                 <div class="summary-card" style="border:1px solid #fed7d7;"><div class="number" style="color:#e53e3e;">${adjusted}</div><div class="label">生效日前（改壓 07/01）</div></div>
             `;
@@ -737,14 +743,9 @@
         }
 
         function displaySource2() {
-            const section = document.getElementById('step6Section');
-            if (source2Results.length === 0) { section.classList.add('hidden'); return; }
-            section.classList.remove('hidden');
-
-            const total = source2Results.length;
-            document.getElementById('summary6').innerHTML = `
-                <div class="summary-card blue"><div class="number">${total}</div><div class="label">自訂名單人數</div></div>
-            `;
+            const block = document.getElementById('source2Block');
+            if (source2Results.length === 0) { block.classList.add('hidden'); return; }
+            block.classList.remove('hidden');
 
             let html = `<thead><tr>
                 <th>#</th><th>姓名</th><th>到職日</th><th>A&amp;C 完成日</th>
@@ -829,9 +830,6 @@
             if (fromStep <= 4) document.getElementById('step4Section').classList.add('hidden');
             if (fromStep <= 5) document.getElementById('step5Section').classList.add('hidden');
             if (fromStep <= 6) document.getElementById('step6Section').classList.add('hidden');
-            if (fromStep <= 7) {
-                document.getElementById('step7Section').classList.add('hidden');
-            }
         }
 
         function parseDate(val) {
