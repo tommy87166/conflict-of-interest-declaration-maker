@@ -350,11 +350,35 @@
         }
 
         function resetStep1() {
+            // Reset all state
             parsedPeople = {};
+            customOnlyList = [];
+            hireDateData = {};
+            acDate = null;
+            source1Results = [];
+            source2Results = [];
+
+            // Reset step 1 UI
             fileInput1.value = '';
             uploadArea1.classList.remove('hidden');
             document.getElementById('fileInfo1').classList.add('hidden');
             document.getElementById('previewSection1').classList.add('hidden');
+
+            // Reset step 2 inputs
+            document.getElementById('acDateInput').value = '';
+            document.getElementById('customNamesInput').value = '';
+            document.getElementById('dupCustomAlert').classList.add('hidden');
+            document.getElementById('excludedAlert').classList.add('hidden');
+
+            // Reset step 4 UI
+            fileInput4.value = '';
+            uploadArea4.classList.remove('hidden');
+            document.getElementById('fileInfo4').classList.add('hidden');
+            document.getElementById('hireDateValidation').classList.add('hidden');
+            document.getElementById('hireDatePreview').classList.add('hidden');
+            document.getElementById('btnGenerate').disabled = true;
+
+            // Hide all steps from 3 onward
             hideSteps(3);
         }
 
