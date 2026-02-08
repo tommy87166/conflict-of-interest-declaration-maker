@@ -179,19 +179,23 @@
 
         <!-- ==================== Step 2 ==================== -->
         <div class="section">
-            <h2><span class="step-badge">步驟 2</span>輸入 A&amp;C 完成日 &amp; 自訂名單</h2>
+            <h2><span class="step-badge">步驟 2</span>輸入自訂名單 &amp; A&amp;C 完成日（可選）</h2>
 
-            <div class="form-row">
+            <p style="font-size: 14px; color: #4a5568; line-height: 1.8; margin-bottom: 16px;">
+                此為可選步驟，可以於下方輸入完成查核團隊名單（以逗點分隔），工具將與上方上傳之 Timesheet 作比對，若該人於 Timesheet 已存在，將使用 Timesheet 之資料。若該人於 Timesheet 中不存在則會用<span style="font-weight:700; text-decoration:underline;">A&amp;C 完成日</span>、<span style="font-weight:700; text-decoration:underline;">該人到職日</span>、<span style="font-weight:700; text-decoration:underline;">規定生效日（2025/7/1）</span>，最晚之日期作為簽署日。
+            </p>
+
+            <div class="form-group">
+                <label>自訂名單（如：不在 Timesheet，但有在 EMW 中人員。）</label>
+                <textarea id="customNamesInput" placeholder="用逗號分隔，例如：王小明, 李大華, 張美玲"></textarea>
+                <span class="form-hint">如姓名與 Timesheet 重複，以 Timesheet 為主（重複者將顯示於排除清單）</span>
+            </div>
+
+            <div id="acDateRow" class="form-row" style="margin-top: 8px;">
                 <div class="form-group">
                     <label>A&amp;C 完成日</label>
                     <input type="date" id="acDateInput">
                 </div>
-            </div>
-
-            <div class="form-group" style="margin-top: 8px;">
-                <label>自訂名單（如：不在 Timesheet，但有在 EMW 中人員。）</label>
-                <textarea id="customNamesInput" placeholder="用逗號分隔，例如：王小明, 李大華, 張美玲"></textarea>
-                <span class="form-hint">如姓名與 Timesheet 重複，以 Timesheet 為主（重複者將顯示於排除清單）</span>
             </div>
 
             <div class="btn-group">
@@ -440,11 +444,7 @@
 
         // ========== Step 2: Process custom names ==========
         function processStep2() {
-            const acDateStr = document.getElementById('acDateInput').value;
-            if (!acDateStr) { alert('請選擇 A&C 完成日'); return; }
             if (Object.keys(parsedPeople).length === 0) { alert('請先上傳 Timesheet Excel'); return; }
-
-            acDate = new Date(acDateStr + 'T00:00:00');
 
             const customInput = document.getElementById('customNamesInput').value.trim();
             const tsNames = new Set(Object.keys(parsedPeople));
@@ -469,6 +469,16 @@
                 }
             }
 
+            // If there are custom names (any, including excluded), require A&C date
+            const hasAnyCustomInput = customInput.length > 0;
+            if (hasAnyCustomInput) {
+                const acDateStr = document.getElementById('acDateInput').value;
+                if (!acDateStr) { alert('有輸入自訂名單時，請先選擇 A&C 完成日'); return; }
+                acDate = new Date(acDateStr + 'T00:00:00');
+            } else {
+                acDate = null;
+            }
+
             // Show duplicate alert
             const dupEl = document.getElementById('dupCustomAlert');
             if (dupCustomNames.length > 0) {
@@ -482,6 +492,15 @@
                 document.getElementById('excludedNames').textContent = excludedNames.join('、');
                 exEl.classList.remove('hidden');
             } else { exEl.classList.add('hidden'); }
+
+            // If no custom names at all, skip step 3/4 and go directly to results
+            if (!hasAnyCustomInput) {
+                hideSteps(3);
+                hireDateData = {};
+                generateResults();
+                document.getElementById('step5Section').scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
 
             // Show step 3
             const step3 = document.getElementById('step3Section');
